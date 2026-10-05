@@ -34,8 +34,10 @@ toastEl=document.getElementById("toast"),cashValue=document.getElementById("cash
 shareValue=document.getElementById("shareValue"),outlookValue=document.getElementById("outlookValue"),
 pauseBtn=document.getElementById("pauseBtn"),speedBtn=document.getElementById("speedBtn");
 
+const clone=v=>JSON.parse(JSON.stringify(v));
+const clamp=(n,a,b)=>Math.max(a,Math.min(b,n));
+const money=n=>"$"+Math.round(n).toLocaleString();
 let state=clone(BASE),scene="property",horizon=30,toastTimer=null,frozen=false;
-const clone=v=>JSON.parse(JSON.stringify(v)),clamp=(n,a,b)=>Math.max(a,Math.min(b,n)),money=n=>"$"+Math.round(n).toLocaleString();
 
 function enabledProducts(s=state){return Object.keys(PRODUCT_DEFS).filter(k=>s.products[k].enabled)}
 function totalStock(s=state){return enabledProducts(s).reduce((sum,k)=>sum+s.products[k].stock,0)}
@@ -126,7 +128,7 @@ function deterministicDay(s){
   if(stockDays>12&&s.satisfaction>76)s.marketShare+=.014;
   if(stockDays<2||s.satisfaction<55)s.marketShare-=.025;
   s.marketShare=clamp(s.marketShare,0,60);
-  s.brandHeat=clamp(s.brandHeat-(s.managers.brand?.012:.025),0,100);
+  s.brandHeat=clamp(s.brandHeat-(s.managers.brand ? .012 : .025),0,100);
   s.peakHeat=Math.max(s.peakHeat,s.brandHeat);
   s.lastThought=chooseThought(s);s.day++;
   return{revenue,units,rawDemand};
