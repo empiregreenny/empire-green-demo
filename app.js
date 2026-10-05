@@ -48,9 +48,20 @@
   function totalStock(s=state){ return Math.round(s.inventory.flower+s.inventory.processed+s.inventory.limited); }
   function daysToHarvest(s=state){ return Math.max(0,s.cropLength-s.cropDay); }
   function dailyFixed(s=state){
-    const payroll = s.staff.retail*190 + s.staff.grow*215 + s.staff.ops*205;
-    const mgr = Object.values(s.managers).filter(Boolean).length * 145;
-    return 520 + payroll + mgr;
+    // All staff labels are monthly salaries; convert them to daily burn here.
+    const staffPayroll = (
+      s.staff.retail*3800 +
+      s.staff.grow*4200 +
+      s.staff.ops*4100
+    ) / 30;
+    const managerPayroll = (
+      (s.managers.retail ? 4300 : 0) +
+      (s.managers.ops ? 4350 : 0) +
+      (s.managers.brand ? 4200 : 0) +
+      (s.managers.rnd ? 4600 : 0)
+    ) / 30;
+    const rentUtilitiesCompliance = 11800 / 30;
+    return rentUtilitiesCompliance + staffPayroll + managerPayroll;
   }
   function retailCapacity(s=state){
     return s.staff.retail*34 + (s.upgrades.express ? 24 : 0) + (s.managers.retail ? 14 : 0);
@@ -166,8 +177,43 @@
   function businessStatus(){
     const p=project(30);
     if(p.cash<=-250000 || p.coverage<2 || p.satisfaction<45) return ["Risk","bad"];
-    if(p.coverage<8 || p.queue>=7 || p.cashDelta<0) return ["Pressure","warn"];
+    if(p.coverage<8 || p.queue>=7 || p.cashDelta < -25000) return ["Pressure","warn"];
     return ["Growing","good"];
+  }
+
+  function projectedNet(days=30, candidate=state){
+    const original = state;
+    state = candidate;
+    const p = project(days);
+    state = original;
+    return p.cashDelta;
+  }
+
+  function impactText(candidate, cost=0){
+    const net = projectedNet(30,candidate);
+    const afterCash = candidate.cash;
+    const sign = net >= 0 ? "+" : "";
+    return "Cash " + money(afterCash) + " • 30D " + sign + money(net);
+  }
+
+  function confirmRiskyPurchase(candidate, label, cost){
+    const p = (() => {
+      const original = state;
+      state = candidate;
+      const result = project(30);
+      state = original;
+      return result;
+    })();
+    const risky = p.cashDelta < -45000 || p.cash < 50000 || p.coverage < 4;
+    if(!risky) return true;
+    return window.confirm(
+      label + " may strain the business.\n\n" +
+      "Cost now: " + money(cost) + "\n" +
+      "30-day cash: " + money(p.cash) + "\n" +
+      "30-day change: " + (p.cashDelta>=0?"+":"") + money(p.cashDelta) + "\n" +
+      "Stock coverage: " + Math.round(p.coverage) + " days\n\n" +
+      "Proceed?"
+    );
   }
 
   function showToast(msg){
@@ -238,7 +284,7 @@
         '<div class="people" style="right:9%;bottom:11%;width:70%;height:36%">'+peopleMarkup()+'</div>';
       actions=actionButton("priceDown","Price −$2","Demand ↑ • margin ↓",state.price<=24)+
         actionButton("priceUp","Price +$2","Margin ↑ • resistance ↑",state.price>=60)+
-        actionButton("hireRetail","Hire budtender","$3,800/mo • capacity +34")+
+        actionButton("hireRetail","Hire budtender","$900 onboarding • $3,800/mo")+
         actionButton("express",state.upgrades.express?"Express active":"Build express",state.upgrades.express?"Queue relief online":"$18,000 • capacity +24",state.upgrades.express);
     }
     if(name==="grow"){
@@ -261,7 +307,7 @@
         '<div class="worker" style="left:69%;top:69%"></div>';
       actions=actionButton("materials","Order materials","$1,800 • +45 materials")+
         actionButton("process","Process 200 flower","→ 145 processed • higher revenue",state.inventory.flower<200)+
-        actionButton("hireOps",state.managers.ops?"Ops lead hired":"Hire Ops lead",state.managers.ops?"Auto-restock materials":"$4,350/mo • automation",state.managers.ops);
+        actionButton("hireOps",state.managers.ops?"Ops lead hired":"Hire Ops lead",state.managers.ops?"Auto-restock materials":"$1,200 onboarding • $4,350/mo",state.managers.ops);
     }
     if(name==="brand"){
       title="Brand / market"; sub="Heat brings traffic. Traffic creates operational pressure.";
@@ -271,7 +317,7 @@
         '<div class="fixture" style="left:30%;top:56%;width:40%">LIMITED PRODUCT<small>'+Math.round(state.inventory.limited)+' units</small></div>';
       actions=actionButton("campaign","Local campaign","$12,000 • heat +12 • demand ↑")+
         actionButton("limitedDrop","Create limited drop","Use 180 flower → 120 limited",state.inventory.flower<180)+
-        actionButton("hireBrand",state.managers.brand?"Brand lead hired":"Hire Brand lead",state.managers.brand?"Heat decay reduced":"$4,200/mo • campaigns improve",state.managers.brand);
+        actionButton("hireBrand",state.managers.brand?"Brand lead hired":"Hire Brand lead",state.managers.brand?"Heat decay reduced":"$1,200 onboarding • $4,200/mo",state.managers.brand);
     }
     if(name==="rnd"){
       title="Second floor • R&D"; sub="Experiments create product, genetics and identity";
@@ -282,7 +328,7 @@
         '<div class="worker" style="left:23%;top:72%"></div>';
       actions=actionButton("startRnd",state.rndProgress?"Experiment running":"Run experiment",state.rndProgress?"Completes at day 12":"$7,000 • 12 days • product upside",state.rndProgress>0)+
         actionButton("pheno","Pheno project","$9,500 • heat +6 • quality signal")+
-        actionButton("hireRnd",state.managers.rnd?"R&D lead hired":"Hire R&D lead",state.managers.rnd?"Future experiments cheaper":"$4,600/mo • R&D support",state.managers.rnd);
+        actionButton("hireRnd",state.managers.rnd?"R&D lead hired":"Hire R&D lead",state.managers.rnd?"Future experiments cheaper":"$1,200 onboarding • $4,600/mo",state.managers.rnd);
     }
     return '<section class="room"><header class="room-head"><b>'+title+'</b><small>'+sub+'</small></header>'+
       '<div class="room-world">'+world+'</div><div class="action-strip">'+actions+'</div>'+
@@ -332,39 +378,126 @@
   }
   function closePanel(){ panelLayer.innerHTML=""; }
 
-  function spend(amount,label){
-    if(state.cash<amount-333333){ showToast("Not enough runway for "+label); return false; }
-    state.cash-=amount;
+  function spend(amount,label,mutateCandidate){
+    if(state.cash-amount<=-333333){ showToast("That would immediately toast the company."); return false; }
+    const candidate = clone(state);
+    candidate.cash -= amount;
+    if(typeof mutateCandidate === "function") mutateCandidate(candidate);
+    if(!confirmRiskyPurchase(candidate,label,amount)) return false;
+    state.cash -= amount;
     checkBankruptcy();
+    return true;
+  }
+
+  function hireWithOnboarding(roleKey, staffKey, monthlySalary, onboarding){
+    const candidate=clone(state);
+    candidate.cash-=onboarding;
+    if(staffKey) candidate.staff[staffKey]++;
+    if(roleKey) candidate.managers[roleKey]=true;
+    const label=(roleKey ? roleKey.charAt(0).toUpperCase()+roleKey.slice(1)+" lead" : staffKey+" staff");
+    if(!confirmRiskyPurchase(candidate,label,onboarding)) return false;
+    state.cash-=onboarding;
+    if(staffKey) state.staff[staffKey]++;
+    if(roleKey) state.managers[roleKey]=true;
+    showToast(label+" hired • "+money(monthlySalary)+"/mo • "+impactText(state));
     return true;
   }
 
   function applyAction(action){
     if(action==="home"){ scene="property"; renderScene(); return; }
-    if(action==="pause"){ state.running=!state.running; updateHUD(); return; }
-    if(action==="speed"){ state.speed=state.speed===1?3:state.speed===3?8:1; updateHUD(); showToast(state.speed+"× simulation speed"); return; }
-    if(action==="priceDown"){ state.price=Math.max(24,state.price-2); showToast("Retail price "+money(state.price)); }
-    if(action==="priceUp"){ state.price=Math.min(60,state.price+2); showToast("Retail price "+money(state.price)); }
-    if(action==="hireRetail"){ if(spend(3800,"a budtender")){state.staff.retail++;showToast("Budtender hired • capacity increased");} }
-    if(action==="express"&&!state.upgrades.express){ if(spend(18000,"express checkout")){state.upgrades.express=true;showToast("Express checkout online");} }
-    if(action==="focusBalanced"){state.growFocus="balanced";showToast("Grow focus: balanced");}
-    if(action==="focusQuality"){state.growFocus="quality";state.brandHeat=clamp(state.brandHeat+2,0,100);showToast("Quality push selected");}
-    if(action==="focusYield"){state.growFocus="yield";state.brandHeat=clamp(state.brandHeat-1,0,100);showToast("Yield push selected");}
-    if(action==="flower2"&&!state.upgrades.flower2){if(spend(52000,"Flower Room II")){state.upgrades.flower2=true;showToast("Flower Room II online");}}
-    if(action==="materials"){if(spend(1800,"materials")){state.materials+=45;showToast("+45 packaging materials");}}
-    if(action==="process"&&state.inventory.flower>=200){state.inventory.flower-=200;state.inventory.processed+=145;state.materials=Math.max(0,state.materials-3);showToast("200 flower → 145 processed");}
-    if(action==="hireOps"&&!state.managers.ops){if(spend(4350,"Ops Lead")){state.managers.ops=true;showToast("Ops Lead hired • material restock delegated");}}
-    if(action==="campaign"){if(spend(12000,"campaign")){state.brandHeat=clamp(state.brandHeat+(state.managers.brand?15:12),0,100);state.marketShare=clamp(state.marketShare+.35,0,60);showToast("Campaign live • traffic rising");}}
-    if(action==="limitedDrop"&&state.inventory.flower>=180){state.inventory.flower-=180;state.inventory.limited+=120;state.brandHeat=clamp(state.brandHeat+5,0,100);showToast("Limited drop created");}
-    if(action==="hireBrand"&&!state.managers.brand){if(spend(4200,"Brand Lead")){state.managers.brand=true;showToast("Brand Lead hired");}}
-    if(action==="startRnd"&&!state.rndProgress){const cost=state.managers.rnd?5600:7000;if(spend(cost,"R&D experiment")){state.rndProgress=1;showToast("Experiment started • 12 days");}}
-    if(action==="pheno"){if(spend(9500,"pheno project")){state.rndWins++;state.brandHeat=clamp(state.brandHeat+6,0,100);showToast("Pheno project landed • brand heat +6");}}
-    if(action==="hireRnd"&&!state.managers.rnd){if(spend(4600,"R&D Lead")){state.managers.rnd=true;showToast("R&D Lead hired");}}
+    if(action==="pause"){ state.running=!state.running; updateHUD(); showToast(state.running?"Simulation running":"Simulation paused"); return; }
+    if(action==="speed"){ state.speed=state.speed===1?2:state.speed===2?4:1; updateHUD(); showToast(state.speed+"× simulation speed"); return; }
+
+    if(action==="priceDown"){ state.price=Math.max(24,state.price-2); showToast("Retail price "+money(state.price)+" • "+impactText(state)); }
+    if(action==="priceUp"){ state.price=Math.min(60,state.price+2); showToast("Retail price "+money(state.price)+" • "+impactText(state)); }
+
+    if(action==="hireRetail"){
+      hireWithOnboarding(null,"retail",3800,900);
+    }
+
+    if(action==="express"&&!state.upgrades.express){
+      const candidate=clone(state);candidate.cash-=18000;candidate.upgrades.express=true;
+      if(spend(18000,"Express checkout",c=>c.upgrades.express=true)){
+        state.upgrades.express=true;
+        showToast("Express online • "+impactText(state));
+      }
+    }
+
+    if(action==="focusBalanced"){state.growFocus="balanced";showToast("Grow focus: balanced • "+impactText(state));}
+    if(action==="focusQuality"){state.growFocus="quality";state.brandHeat=clamp(state.brandHeat+2,0,100);showToast("Quality push • yield lower, heat higher");}
+    if(action==="focusYield"){state.growFocus="yield";state.brandHeat=clamp(state.brandHeat-1,0,100);showToast("Yield push • harvest larger, heat slightly lower");}
+
+    if(action==="flower2"&&!state.upgrades.flower2){
+      if(spend(52000,"Flower Room II",c=>c.upgrades.flower2=true)){
+        state.upgrades.flower2=true;
+        showToast("Flower II online • "+impactText(state));
+      }
+    }
+
+    if(action==="materials"){
+      if(spend(1800,"Materials order",c=>c.materials+=45)){
+        state.materials+=45;
+        showToast("+45 materials • "+impactText(state));
+      }
+    }
+
+    if(action==="process"&&state.inventory.flower>=200){
+      state.inventory.flower-=200;
+      state.inventory.processed+=145;
+      state.materials=Math.max(0,state.materials-3);
+      showToast("200 flower → 145 processed • higher unit value");
+    }
+
+    if(action==="hireOps"&&!state.managers.ops){
+      hireWithOnboarding("ops",null,4350,1200);
+    }
+
+    if(action==="campaign"){
+      if(spend(12000,"Local campaign",c=>{
+        c.brandHeat=clamp(c.brandHeat+(c.managers.brand?15:12),0,100);
+        c.marketShare=clamp(c.marketShare+.35,0,60);
+      })){
+        state.brandHeat=clamp(state.brandHeat+(state.managers.brand?15:12),0,100);
+        state.marketShare=clamp(state.marketShare+.35,0,60);
+        showToast("Campaign live • demand rising • "+impactText(state));
+      }
+    }
+
+    if(action==="limitedDrop"&&state.inventory.flower>=180){
+      state.inventory.flower-=180;
+      state.inventory.limited+=120;
+      state.brandHeat=clamp(state.brandHeat+5,0,100);
+      showToast("Limited drop created • margin + / flower stock −");
+    }
+
+    if(action==="hireBrand"&&!state.managers.brand){
+      hireWithOnboarding("brand",null,4200,1200);
+    }
+
+    if(action==="startRnd"&&!state.rndProgress){
+      const cost=state.managers.rnd?5600:7000;
+      if(spend(cost,"R&D experiment",c=>c.rndProgress=1)){
+        state.rndProgress=1;
+        showToast("Experiment started • 12 days • "+impactText(state));
+      }
+    }
+
+    if(action==="pheno"){
+      if(spend(9500,"Pheno project",c=>{c.rndWins++;c.brandHeat=clamp(c.brandHeat+6,0,100);})){
+        state.rndWins++;
+        state.brandHeat=clamp(state.brandHeat+6,0,100);
+        showToast("Pheno project landed • heat +6 • "+impactText(state));
+      }
+    }
+
+    if(action==="hireRnd"&&!state.managers.rnd){
+      hireWithOnboarding("rnd",null,4600,1200);
+    }
+
     state.peakHeat=Math.max(state.peakHeat,state.brandHeat);
     renderScene();
     checkBankruptcy();
   }
-
   function checkBankruptcy(){
     if(state.cash>-333333) return false;
     state.running=false;
@@ -427,5 +560,7 @@
   });
 
   renderScene();
-  setInterval(liveTick,1000);
+  // One real-time tick is deliberately slower than one in-game day so purchases
+  // and management decisions have time to be read before the economy advances.
+  setInterval(liveTick,2000);
 })();
