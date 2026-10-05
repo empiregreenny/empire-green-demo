@@ -1,11 +1,11 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <meta name="theme-color" content="#101712" />
-  <title>Empire Green — V4.2.1</title>
-  <style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101712">
+<title>Empire Green — V4.2.2</title>
+<style>
 :root{
   --bg:#0f1511;--panel:#18211b;--panel2:#202a23;--line:#334139;--ink:#f2f1e8;
   --muted:#a4afa7;--green:#8fb681;--green2:#5e8060;--amber:#d4ad63;--red:#cf6964;
@@ -179,36 +179,26 @@ button:disabled{opacity:.42;cursor:not-allowed}
 </style>
 </head>
 <body>
-  <div id="app" class="app">
-    <header class="hud">
-      <button class="metric metric--button" data-open="outlook" aria-label="Open business outlook">
-        <span>Cash</span><strong id="cashValue">$220,000</strong>
-      </button>
-      <div class="metric">
-        <span>Market share</span><strong id="shareValue">7.8%</strong>
-      </div>
-      <button class="metric metric--button" data-open="outlook">
-        <span>30D outlook</span><strong id="outlookValue" class="good">Growing</strong>
-      </button>
-    </header>
-
-    <main id="stage" class="stage" aria-live="polite"><div style="padding:24px;color:#a4afa7;font-size:12px">Loading Empire Green…</div></main>
-
-    <nav class="dockbar dockbar--tycoon">
-      <button id="pauseBtn" data-action="pause">Ⅱ</button>
-      <button id="speedBtn" data-action="speed">1×</button>
-      <button data-open="products">Products</button>
-      <button data-open="staff">Staff</button>
-      <button data-open="outlook">Reports</button>
-    </nav>
-
-    <div id="toast" class="toast" role="status"></div>
-    <div id="panelLayer"></div>
-    <div id="gameOverLayer"></div>
-  </div>
-
-  <script>
-window.addEventListener("error", function(e){
+<div id="app" class="app">
+  <header class="hud">
+    <button class="metric metric--button" data-open="outlook"><span>Cash</span><strong id="cashValue">$220,000</strong></button>
+    <div class="metric"><span>Market share</span><strong id="shareValue">7.8%</strong></div>
+    <button class="metric metric--button" data-open="outlook"><span>30D outlook</span><strong id="outlookValue" class="good">Growing</strong></button>
+  </header>
+  <main id="stage" class="stage" aria-live="polite"><div style="padding:24px;color:#a4afa7;font-size:12px">Loading Empire Green…</div></main>
+  <nav class="dockbar dockbar--tycoon">
+    <button id="pauseBtn" data-action="pause">Ⅱ</button>
+    <button id="speedBtn" data-action="speed">1×</button>
+    <button data-open="products">Products</button>
+    <button data-open="staff">Staff</button>
+    <button data-open="outlook">Reports</button>
+  </nav>
+  <div id="toast" class="toast" role="status"></div>
+  <div id="panelLayer"></div>
+  <div id="gameOverLayer"></div>
+</div>
+<script>
+window.addEventListener("error",function(e){
   var s=document.getElementById("stage");
   if(s){s.innerHTML='<div style="padding:20px;color:#e07a75;font:12px system-ui">Game error: '+String(e.message||"unknown")+'</div>';}
 });
@@ -380,9 +370,7 @@ function propertyMarkup(){
   '<button class="chat-btn" data-open="feed">CHAT</button><div class="day-badge">DAY '+state.day+' • '+totalStock()+' units on menu</div></section>';
 }
 function actionButton(a,l,s,d=false){return '<button class="action-btn" data-action="'+a+'" '+(d?'disabled':'')+'><b>'+l+'</b><small>'+s+'</small></button>'}
-function shelf(k,left,top){const d=PRODUCT_DEFS[k],p=state.products[k];return '<button class="store-shelf" data-product="'+k+'" style="left:'+left+'%;top:'+top+'%">'+d.name+'<small>'+Math.round(p.stock)+' • 
-</body>
-</html>+p.price+'</small></button>'}
+function shelf(k,left,top){const d=PRODUCT_DEFS[k],p=state.products[k];return '<button class="store-shelf" data-product="'+k+'" style="left:'+left+'%;top:'+top+'%">'+d.name+'<small>'+Math.round(p.stock)+' • $'+p.price+'</small></button>'}
 function roomMarkup(name){
   let title="",sub="",world="",actions="";
   if(name==="retail"){
@@ -419,9 +407,7 @@ function card(l,v){return '<div class="card"><span>'+l+'</span><b>'+v+'</b></div
 function productsPanel(){
   return '<div class="scrim" data-close-panel></div><section class="panel"><div class="grabber"></div><h2>Products & pricing</h2><div class="note">This is your ride list: each offering has its own demand, price sensitivity, stock and margin.</div><div class="product-list">'+Object.keys(PRODUCT_DEFS).map(k=>{
     const d=PRODUCT_DEFS[k],p=state.products[k],off=!p.enabled;
-    return '<div class="product-row '+(off?'product-off':'')+'"><div class="name"><b>'+d.name+'</b><small>'+d.category+' • quality '+d.quality+' • margin '+money(productMargin(k))+'</small><span class="product-chip">'+(off?'LOCKED / OFF MENU':Math.round(productDemand(k))+' demand/day')+'</span></div><div class="stock"><b>'+Math.round(p.stock)+'</b><br>stock</div><div class="price"><b>
-</body>
-</html>+p.price+'</b><br>price</div><div class="stepper"><button data-price="'+k+'" data-delta="-2" '+(off?'disabled':'')+'>−</button><button data-price="'+k+'" data-delta="2" '+(off?'disabled':'')+'>+</button></div></div>';
+    return '<div class="product-row '+(off?'product-off':'')+'"><div class="name"><b>'+d.name+'</b><small>'+d.category+' • quality '+d.quality+' • margin '+money(productMargin(k))+'</small><span class="product-chip">'+(off?'LOCKED / OFF MENU':Math.round(productDemand(k))+' demand/day')+'</span></div><div class="stock"><b>'+Math.round(p.stock)+'</b><br>stock</div><div class="price"><b>$'+p.price+'</b><br>price</div><div class="stepper"><button data-price="'+k+'" data-delta="-2" '+(off?'disabled':'')+'>−</button><button data-price="'+k+'" data-delta="2" '+(off?'disabled':'')+'>+</button></div></div>';
   }).join("")+'</div><button data-close-panel>Close</button></section>';
 }
 function staffPanel(){
