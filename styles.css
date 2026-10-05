@@ -138,3 +138,32 @@ button:disabled{opacity:.42;cursor:not-allowed}
   .room-head{height:42px;padding:5px 10px}.room-world{top:42px;bottom:97px}.action-strip{bottom:45px;height:52px;padding:4px}.action-btn{min-height:42px}
   .home-btn{bottom:calc(3px + env(safe-area-inset-bottom));min-height:39px}
 }
+
+/* V4.2 — tycoon controls + product windows */
+.dockbar--tycoon{grid-template-columns:56px 64px repeat(3,minmax(0,1fr))}
+.product-list{display:grid;gap:7px}
+.product-row{display:grid;grid-template-columns:minmax(0,1.4fr) 68px 66px 92px;gap:6px;align-items:center;
+  border:1px solid var(--line);background:#222b24;border-radius:11px;padding:8px}
+.product-row .name{min-width:0}.product-row .name b{display:block;font-size:12px}.product-row .name small{display:block;color:var(--muted);font-size:9px;margin-top:2px}
+.product-row .stock,.product-row .price{font-size:11px;text-align:center}.product-row .price b{display:block;font-size:13px}
+.stepper{display:grid;grid-template-columns:1fr 1fr;gap:4px}.stepper button{min-height:36px;padding:0}
+.product-off{opacity:.5}.product-chip{display:inline-flex;align-items:center;gap:5px;padding:3px 6px;border:1px solid var(--line);border-radius:999px;font-size:8px;color:var(--muted);margin-top:4px}
+.store-shelf{position:absolute;min-width:92px;padding:7px;border:1px solid #8d958e;border-radius:7px;background:#6f7972;color:#121712;font-weight:900;font-size:9px;text-align:center;box-shadow:0 6px 12px #0004}
+.store-shelf small{display:block;font-weight:700;margin-top:2px;opacity:.8}
+.staff-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:7px}
+.staff-card{border:1px solid var(--line);background:#222b24;border-radius:11px;padding:9px}.staff-card span{display:block;color:var(--muted);font-size:8px;text-transform:uppercase;letter-spacing:.08em}
+.staff-card b{display:block;font-size:14px;margin-top:2px}
+.report-line{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #303b33;font-size:11px}.report-line:last-child{border-bottom:0}
+.thought-bubble{position:absolute;z-index:13;right:15%;bottom:44%;max-width:160px;padding:6px 8px;border-radius:10px;background:#f0ecd8;color:#20231f;font-size:9px;box-shadow:0 5px 16px #0005}
+.day-badge{position:absolute;z-index:12;left:10px;bottom:10px;padding:6px 8px;border:1px solid var(--line);border-radius:9px;background:#111813d9;font-size:9px;color:var(--muted)}
+@media(max-width:430px){
+  .dockbar--tycoon{grid-template-columns:48px 54px repeat(3,minmax(0,1fr))}
+  .dockbar--tycoon button{font-size:9px;padding:0 4px}
+  .product-row{grid-template-columns:minmax(0,1.2fr) 54px 58px 74px;padding:7px 6px}
+  .product-row .name b{font-size:10px}.product-row .name small{font-size:8px}
+  .product-row .stock,.product-row .price{font-size:9px}
+  .staff-grid{grid-template-columns:1fr}
+}
+@media(min-width:700px){
+  .dockbar--tycoon{grid-template-columns:70px 80px repeat(3,180px)}
+}
